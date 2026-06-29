@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>🍽️ מסך לקוח</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; background: #f5f5f5; }
+        h1 { color: #2c3e50; }
+        .form-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input { padding: 8px; margin: 5px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        button { padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        button:hover { background: #2980b9; }
+        .order { padding: 12px; margin: 8px 0; border-radius: 6px; background: #fff3cd; border-right: 4px solid #f39c12; }
+        .order.approved { background: #d4edda; border-right: 4px solid #27ae60; font-weight: bold; }
+        .status-waiting { color: #f39c12; }
+        .status-approved { color: #27ae60; }
+    </style>
+</head>
+<body>
+
+<h1>🍽️ מסך לקוח / קופה</h1>
+
+<!-- טופס שליחת הזמנה -->
+<div class="form-box">
+    <h3>הזמנה חדשה</h3>
+    <input type="text" id="tableNumber" placeholder="מספר שולחן" />
+    <input type="text" id="items" placeholder="מנות (למשל: שניצל, קולה)" style="width: 300px;" />
+    <button onclick="sendOrder()">שלח הזמנה ➤</button>
+</div>
+
+<!-- רשימת הזמנות -->
+<div class="form-box">
+    <h3>הזמנות שלי</h3>
+    <div id="ordersList">טוען...</div>
+</div>
+
+<script>
+    const API = "http://localhost:8080/api/orders";
+
+    // שולח הזמנה חדשה לשרת
+    async function sendOrder() {
+        const tableNumber = document.getElementById("tableNumber").value.trim();
+        const items       = document.getElementById("items").value.trim();
+
+        if (!tableNumber || !items) {
+            alert("נא למלא שולחן ומנות");
+            return;
+        }
+
+        await fetch(API, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tableNumber, items })
+        });
+
+        document.getElementById("tableNumber").value = "";
+        document.getElementById("items").value = "";
+        loadOrders(); // מרענן את הרשימה
+    }
+
+    // טוען את כל ההזמנות מהשרת
+    async function loadOrders() {
+        const res    = await fetch(API);
+        const orders = await res.json();
+        const list   = document.getElementById("ordersList");
+
+        if (orders.length === 0) {
+            list.innerHTML = "<p>אין הזמנות עדיין</p>";
+            return;
+        }
+
+        list.innerHTML = orders.map(o => `
+            <div class="order ${o.status === 'APPROVED' ? 'approved' : ''}">
+                <strong>שולחן ${o.tableNumber}</strong> | ${o.items}
+                <span class="status-${o.status.toLowerCase()}">
+                    ${o.status === 'APPROVED' ? ' ✅ אושר!' : ' ⏳ ממתין'}
+                </span>
+            </div>
+        `).join("");
+    }
+
+    // מרענן כל 3 שניות (כדי לראות שינויי סטטוס מהמטבח)
+    loadOrders();
+    setInterval(loadOrders, 3000);
+</script>
+</body>
+</html>

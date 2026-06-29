@@ -1,0 +1,31 @@
+# docker-compose.yml
+# הרצה: docker compose up --build
+# עצירה:  docker compose down
+
+version: "3.9"
+
+services:
+
+  # ==============================
+  # שירות ה-Backend (Java/Spring Boot)
+  # ==============================
+  backend:
+    build: ./backend          # בונה את ה-Docker image מהתיקיה הזו
+    container_name: restaurant-backend
+    ports:
+      - "8080:8080"           # מחבר פורט 8080 במחשב -> פורט 8080 בקונטיינר
+    environment:
+      - SPRING_PROFILES_ACTIVE=default
+    restart: unless-stopped   # מפעיל מחדש אם קורס
+
+  # ==============================
+  # שירות ה-Frontend (Nginx + HTML)
+  # ==============================
+  frontend:
+    build: ./frontend
+    container_name: restaurant-frontend
+    ports:
+      - "3000:80"             # מחשב:3000 -> nginx:80
+    depends_on:
+      - backend               # מחכה שה-backend יתחיל קודם
+    restart: unless-stopped

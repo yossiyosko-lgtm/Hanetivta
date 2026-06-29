@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>👨‍🍳 מסך מטבח</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; background: #1a1a2e; color: #eee; }
+        h1 { color: #e94560; }
+        .order { background: #16213e; padding: 15px; margin: 10px 0; border-radius: 8px; border-right: 4px solid #e94560; display: flex; justify-content: space-between; align-items: center; }
+        .order-info { font-size: 16px; }
+        .order-info strong { color: #e94560; font-size: 18px; }
+        button { padding: 10px 18px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        button:hover { background: #1e8449; }
+        .empty { color: #888; text-align: center; margin-top: 60px; font-size: 18px; }
+    </style>
+</head>
+<body>
+
+<h1>👨‍🍳 מסך מטבח</h1>
+<p>הזמנות ממתינות לאישור:</p>
+
+<div id="ordersList">טוען...</div>
+
+<script>
+    const API = "http://localhost:8080/api/orders";
+
+    // מאשר הזמנה לפי ID
+    async function approveOrder(id) {
+        await fetch(`${API}/${id}/approve`, { method: "PUT" });
+        loadOrders(); // מרענן מיד
+    }
+
+    // טוען רק הזמנות שממתינות
+    async function loadOrders() {
+        const res    = await fetch(`${API}/waiting`);
+        const orders = await res.json();
+        const list   = document.getElementById("ordersList");
+
+        if (orders.length === 0) {
+            list.innerHTML = '<div class="empty">✅ אין הזמנות ממתינות</div>';
+            return;
+        }
+
+        list.innerHTML = orders.map(o => `
+            <div class="order">
+                <div class="order-info">
+                    <strong>שולחן ${o.tableNumber}</strong><br>
+                    ${o.items}
+                </div>
+                <button onclick="approveOrder(${o.id})">✅ אשר</button>
+            </div>
+        `).join("");
+    }
+
+    // מרענן כל 3 שניות (לקבל הזמנות חדשות)
+    loadOrders();
+    setInterval(loadOrders, 3000);
+</script>
+</body>
+</html>
