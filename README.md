@@ -1,3 +1,7 @@
+קישורים לאתר
+מסך לקוח https://hanetivta-1.onrender.com/customer.html
+מסך מטבח https://hanetivta-1.onrender.com/kitchen.html
+
 # 🍽️ Restaurant Order System
 
 מערכת ניהול הזמנות למסעדה - פרויקט DevOps
