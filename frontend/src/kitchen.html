@@ -12,6 +12,10 @@
         button { padding: 10px 18px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
         button:hover { background: #1e8449; }
         .empty { color: #888; text-align: center; margin-top: 60px; font-size: 18px; }
+        /* ✅ חדש */
+        .btn-delete { padding: 10px 18px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-right: 8px; }
+        .btn-delete:hover { background: #c0392b; }
+        .btn-group { display: flex; gap: 8px; }
     </style>
 </head>
 <body>
@@ -24,13 +28,18 @@
 <script>
     const API = "https://hanetivta.onrender.com/api/orders";
 
-    // מאשר הזמנה לפי ID
     async function approveOrder(id) {
         await fetch(`${API}/${id}/approve`, { method: "PUT" });
-        loadOrders(); // מרענן מיד
+        loadOrders();
     }
 
-    // טוען רק הזמנות שממתינות
+    // ✅ חדש
+    async function deleteOrder(id) {
+        if (!confirm("למחוק את ההזמנה?")) return;
+        await fetch(`${API}/${id}`, { method: "DELETE" });
+        loadOrders();
+    }
+
     async function loadOrders() {
         const res    = await fetch(`${API}/waiting`);
         const orders = await res.json();
@@ -47,12 +56,14 @@
                     <strong>שולחן ${o.tableNumber}</strong><br>
                     ${o.items}
                 </div>
-                <button onclick="approveOrder(${o.id})">✅ אשר</button>
+                <div class="btn-group">
+                    <button class="btn-delete" onclick="deleteOrder(${o.id})">🗑️ מחק</button>
+                    <button onclick="approveOrder(${o.id})">✅ אשר</button>
+                </div>
             </div>
         `).join("");
     }
 
-    // מרענן כל 3 שניות (לקבל הזמנות חדשות)
     loadOrders();
     setInterval(loadOrders, 3000);
 </script>

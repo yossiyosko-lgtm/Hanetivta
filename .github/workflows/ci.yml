@@ -116,3 +116,4 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/restaurant-frontend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/restaurant-frontend:${{ github.sha }}
+            

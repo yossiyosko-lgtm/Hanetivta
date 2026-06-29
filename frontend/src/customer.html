@@ -14,6 +14,17 @@
         .order.approved { background: #d4edda; border-right: 4px solid #27ae60; font-weight: bold; }
         .status-waiting { color: #f39c12; }
         .status-approved { color: #27ae60; }
+        .btn-delete { 
+    padding: 4px 10px; 
+    background: #e74c3c; 
+    color: white; 
+    border: none; 
+    border-radius: 4px; 
+    cursor: pointer; 
+    font-size: 12px; 
+    margin-right: 10px;
+}
+.btn-delete:hover { background: #c0392b; }
     </style>
 </head>
 <body>
@@ -80,8 +91,21 @@
     }
 
     // מרענן כל 3 שניות (כדי לראות שינויי סטטוס מהמטבח)
-    loadOrders();
-    setInterval(loadOrders, 3000);
+    list.innerHTML = orders.map(o => `
+    <div class="order ${o.status === 'APPROVED' ? 'approved' : ''}">
+        <strong>שולחן ${o.tableNumber}</strong> | ${o.items}
+        <span class="status-${o.status.toLowerCase()}">
+            ${o.status === 'APPROVED' ? ' ✅ אושר!' : ' ⏳ ממתין'}
+        </span>
+        <button class="btn-delete" onclick="deleteOrder(${o.id})">🗑️ מחק</button>
+    </div>
+`).join("");
 </script>
+async function deleteOrder(id) {
+    if (!confirm("למחוק את ההזמנה?")) return;
+
+    await fetch(`${API}/${id}`, { method: "DELETE" });
+    loadOrders();
+}
 </body>
 </html>
