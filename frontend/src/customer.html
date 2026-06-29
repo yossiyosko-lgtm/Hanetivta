@@ -10,28 +10,20 @@
         input { padding: 8px; margin: 5px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         button { padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
         button:hover { background: #2980b9; }
-        .order { padding: 12px; margin: 8px 0; border-radius: 6px; background: #fff3cd; border-right: 4px solid #f39c12; }
+        .order { padding: 12px; margin: 8px 0; border-radius: 6px; background: #fff3cd; border-right: 4px solid #f39c12; display: flex; justify-content: space-between; align-items: center; }
         .order.approved { background: #d4edda; border-right: 4px solid #27ae60; font-weight: bold; }
         .status-waiting { color: #f39c12; }
         .status-approved { color: #27ae60; }
-        .btn-delete { 
-    padding: 4px 10px; 
-    background: #e74c3c; 
-    color: white; 
-    border: none; 
-    border-radius: 4px; 
-    cursor: pointer; 
-    font-size: 12px; 
-    margin-right: 10px;
-}
-.btn-delete:hover { background: #c0392b; }
+        .btn-delete { padding: 4px 10px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .btn-delete:hover { background: #c0392b; }
+        .loading { color: #888; text-align: center; padding: 20px; font-size: 16px; }
+        .error { color: #e74c3c; text-align: center; padding: 20px; font-size: 16px; }
     </style>
 </head>
 <body>
 
 <h1>🍽️ מסך לקוח / קופה</h1>
 
-<!-- טופס שליחת הזמנה -->
 <div class="form-box">
     <h3>הזמנה חדשה</h3>
     <input type="text" id="tableNumber" placeholder="מספר שולחן" />
@@ -39,16 +31,15 @@
     <button onclick="sendOrder()">שלח הזמנה ➤</button>
 </div>
 
-<!-- רשימת הזמנות -->
 <div class="form-box">
     <h3>הזמנות שלי</h3>
-    <div id="ordersList">טוען...</div>
+    <div id="ordersList"><div class="loading">⏳ מתחבר לשרת, רגע...</div></div>
 </div>
 
 <script>
     const API = "https://hanetivta.onrender.com/api/orders";
+    let firstLoad = true;
 
-    // שולח הזמנה חדשה לשרת
     async function sendOrder() {
         const tableNumber = document.getElementById("tableNumber").value.trim();
         const items       = document.getElementById("items").value.trim();
@@ -66,46 +57,52 @@
 
         document.getElementById("tableNumber").value = "";
         document.getElementById("items").value = "";
-        loadOrders(); // מרענן את הרשימה
+        loadOrders();
     }
 
-    // טוען את כל ההזמנות מהשרת
-    async function loadOrders() {
-        const res    = await fetch(API);
-        const orders = await res.json();
-        const list   = document.getElementById("ordersList");
+    async function deleteOrder(id) {
+        if (!confirm("למחוק את ההזמנה?")) return;
+        await fetch(`${API}/${id}`, { method: "DELETE" });
+        loadOrders();
+    }
 
-        if (orders.length === 0) {
-            list.innerHTML = "<p>אין הזמנות עדיין</p>";
-            return;
+    async function loadOrders() {
+        const list = document.getElementById("ordersList");
+
+        if (firstLoad) {
+            list.innerHTML = '<div class="loading">⏳ מתחבר לשרת, רגע...</div>';
         }
 
-        list.innerHTML = orders.map(o => `
-            <div class="order ${o.status === 'APPROVED' ? 'approved' : ''}">
-                <strong>שולחן ${o.tableNumber}</strong> | ${o.items}
-                <span class="status-${o.status.toLowerCase()}">
-                    ${o.status === 'APPROVED' ? ' ✅ אושר!' : ' ⏳ ממתין'}
-                </span>
-            </div>
-        `).join("");
+        try {
+            const res    = await fetch(API);
+            const orders = await res.json();
+            firstLoad = false;
+
+            if (orders.length === 0) {
+                list.innerHTML = "<p>אין הזמנות עדיין</p>";
+                return;
+            }
+
+            list.innerHTML = orders.map(o => `
+                <div class="order ${o.status === 'APPROVED' ? 'approved' : ''}">
+                    <div>
+                        <strong>שולחן ${o.tableNumber}</strong> | ${o.items}
+                        <span class="status-${o.status.toLowerCase()}">
+                            ${o.status === 'APPROVED' ? ' ✅ אושר!' : ' ⏳ ממתין'}
+                        </span>
+                    </div>
+                    <button class="btn-delete" onclick="deleteOrder(${o.id})">🗑️ מחק</button>
+                </div>
+            `).join("");
+
+        } catch (e) {
+            firstLoad = false;
+            list.innerHTML = '<div class="error">❌ השרת לא זמין, מנסה שוב בעוד 5 שניות...</div>';
+        }
     }
 
-    // מרענן כל 3 שניות (כדי לראות שינויי סטטוס מהמטבח)
-    list.innerHTML = orders.map(o => `
-    <div class="order ${o.status === 'APPROVED' ? 'approved' : ''}">
-        <strong>שולחן ${o.tableNumber}</strong> | ${o.items}
-        <span class="status-${o.status.toLowerCase()}">
-            ${o.status === 'APPROVED' ? ' ✅ אושר!' : ' ⏳ ממתין'}
-        </span>
-        <button class="btn-delete" onclick="deleteOrder(${o.id})">🗑️ מחק</button>
-    </div>
-`).join("");
-</script>
-async function deleteOrder(id) {
-    if (!confirm("למחוק את ההזמנה?")) return;
-
-    await fetch(`${API}/${id}`, { method: "DELETE" });
     loadOrders();
-}
+    setInterval(loadOrders, 3000);
+</script>
 </body>
 </html>
